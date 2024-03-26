@@ -33,10 +33,12 @@ class MainActivity : ComponentActivity() {
         val button =findViewById<Button>(R.id.randomButton)
         val image = findViewById<ImageView>(R.id.imageView)
         val nameText = findViewById<TextView>(R.id.pkmname)
-        getNextPkm(button, image, nameText)
+        val type1Text = findViewById<TextView>(R.id.type1)
+        val type2Text = findViewById<TextView>(R.id.type2)
+        getNextPkm(button, image, nameText, type1Text, type2Text)
     }
 
-    private fun getPokemonImageURL(id: Int) {
+    private fun getPokemon(id: Int) {
 
         val client = AsyncHttpClient()
         val apiUrl = "https://pokeapi.co/api/v2/pokemon/$id"
@@ -47,29 +49,21 @@ class MainActivity : ComponentActivity() {
                 val sprites = json.jsonObject.getJSONObject("sprites")
                 pokemonImageURL = sprites.getString("front_default")
                 Log.d("Pokemon", "pkmn image URL set")
-            }
 
-            override fun onFailure(
-                statusCode: Int,
-                headers: Headers?,
-                errorResponse: String,
-                throwable: Throwable?
-            ) {
-                Log.d("Pokemon Error", errorResponse)
-            }
-        }]
-    }
-
-    private fun getPokemonName(id: Int, nameText: TextView) {
-        val client = AsyncHttpClient()
-        val apiUrl = "https://pokeapi.co/api/v2/pokemon/$id"
-        client[apiUrl, object : JsonHttpResponseHandler() {
-
-            override fun onSuccess(statusCode: Int, headers: Headers, json: JSON) {
-                Log.d("Pokemon", "response successful$json")
                 name = json.jsonObject.getString("name")
                 Log.d("Pokemon", "Pokemon Name: $name")
-                nameText.text = name;
+
+                val typesArray = json.jsonObject.getJSONArray("types")
+                val typesStringBuilder = StringBuilder()
+
+                val typeObject1 = typesArray.getJSONObject(0)
+                type1 = typeObject1.getJSONObject("type").getString("name")
+
+                val typeObject2 = if (typesArray.length() > 1) {
+                    typesArray.getJSONObject(1)?.getJSONObject("type")
+                } else { null }
+                type2 = typeObject2?.getString("name") ?: "None"
+                Log.d("Pokemon", "Pokemon Types: $type1")
             }
 
             override fun onFailure(
@@ -83,19 +77,20 @@ class MainActivity : ComponentActivity() {
         }]
     }
 
-    private fun getNextPkm(button: Button, imageView: ImageView, nameTextView: TextView){
+    private fun getNextPkm(button: Button, imageView: ImageView, nameTextView: TextView, type1TextView: TextView, type2TextView: TextView){
         button.setOnClickListener{
 
             val choice = Random.nextInt(809)
-            getPokemonImageURL(choice)
-            getPokemonName(choice, nameTextView)
+            getPokemon(choice)
 
             Glide.with(this)
                 .load(pokemonImageURL)
                 .fitCenter()
                 .into(imageView)
 
+            nameTextView.text = name
+            type1TextView.text = type1
+            type2TextView.text = type2
         }
     }
-
 }
